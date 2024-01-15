@@ -151,6 +151,8 @@
     <None Include="2.2.basic_lighting.vs" />
     <None Include="3.3.shader.fs" />
     <None Include="3.3.shader.vs" />
+    <None Include="5.3.light_casters.fs" />
+    <None Include="5.3.light_casters.vs" />
     <None Include="6.3.coordinate_systems.fs" />
     <None Include="6.3.coordinate_systems.vs" />
     <None Include="gouraud_shader.fs" />

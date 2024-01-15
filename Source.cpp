@@ -31,7 +31,8 @@ enum ShaderType
 	FOG,
 	PHONG,
 	GOURAUD,
-	FLAT
+	FLAT,
+	SPOTLIGHT
 };
 
 ShaderType currentShader = BASIC_LIGHTING;
@@ -79,6 +80,7 @@ int main()
 	Shader FogShader("2.2.basic_lighting.vs", "shader_fog.fs");
 	Shader GouraudShader("gouraud_shader.vs", "gouraud_shader.fs");
 	Shader FlatShader("flat_shader.vs", "flat_shader.fs");
+	Shader LightingShader("5.3.light_casters.vs", "5.3.light_casters.fs");
 
 	Shader* modelShader = &BasicLightningShader;
 
@@ -97,9 +99,6 @@ int main()
 		glm::mat4 view = glm::mat4(1.0f); // make sure to initialize matrix to identity matrix first
 		glm::mat4 projection = glm::mat4(1.0f);
 		glm::mat4 model = glm::mat4(1.0f);
-
-		// Setup light
-		//glm::vec3 lightPosition = glm::vec3(0.0f, 0.0f, 7.0f);
 
 		// Upadting cameras:
 		float radius = 1.5f;
@@ -140,10 +139,33 @@ int main()
 		case FLAT:
 			modelShader = &FlatShader;
 			break;
+		case SPOTLIGHT:
+			modelShader = &LightingShader;
+			break;
 		default:
 			modelShader = &BasicLightningShader;
 			break;
 		}
+
+		// Lightning shader updates
+		modelShader->setVec3("light.position", glm::vec3(backpack_x, backpack_y + 2, backpack_z)); // here I can change where the spotlight is located camera->Position
+		//modelShader->setVec3("light.direction", camera->Front); // make it change direction with moving backpack
+		modelShader->setFloat("light.cutOff", glm::cos(glm::radians(12.5f)));
+		modelShader->setVec3("viewPos", camera->Position);
+
+		// light properties
+		modelShader->setVec3("light.ambient", 0.1f, 0.1f, 0.1f);
+		// we configure the diffuse intensity slightly higher; the right lighting conditions differ with each lighting method and environment.
+		// each environment and lighting type requires some tweaking to get the best out of your environment.
+		modelShader->setVec3("light.diffuse", 0.8f, 0.8f, 0.8f);
+		modelShader->setVec3("light.specular", 1.0f, 1.0f, 1.0f);
+		modelShader->setFloat("light.constant", 1.0f);
+		modelShader->setFloat("light.linear", 0.09f);
+		modelShader->setFloat("light.quadratic", 0.032f);
+
+		// material properties
+		modelShader->setFloat("material.shininess", 32.0f);
+
 		modelShader->use();
 		modelShader->setVec3("objectColor", 1.0f, 0.5f, 0.31f);
 		modelShader->setVec3("lightColor", 1.0f, 1.0f, 1.0f);
@@ -152,7 +174,6 @@ int main()
 
 		// Drawing backpack:
 		projection = glm::perspective(glm::radians(camera->Zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
-		//view = camera->GetViewMatrix();
 		modelShader->setMat4("projection", projection);
 		modelShader->setMat4("view", view);
 		model = glm::mat4(1.0f);
@@ -162,6 +183,15 @@ int main()
 		float rotationAngle = glfwGetTime(); // Mo¿esz dostosowaæ ten k¹t w zale¿noœci od potrzeb
 		model = glm::rotate(model, rotationAngle, glm::vec3(0.0f, 1.0f, 0.0f));
 		model = glm::scale(model, glm::vec3(0.5f, 0.5f, 0.5f));
+		// ----------------
+		glm::mat4 pom = glm::mat4(1.0f);
+		pom = glm::rotate(model, rotationAngle, glm::vec3(0.0f, 1.0f, 0.0f));
+		glm::vec4 lightDirectionBeforeRotation = glm::vec4(0.0f, 0.0f, 1.0f, 1.0f);
+		lightDirectionBeforeRotation = pom * lightDirectionBeforeRotation;
+		glm::vec3 lightDirection = glm::normalize(glm::vec3(lightDirectionBeforeRotation));
+		modelShader->setVec3("light.direction", lightDirection);
+
+		// ----------------
 		modelShader->setMat4("model", model);
 		backpackModel.Draw(*modelShader);
 
@@ -186,10 +216,10 @@ int main()
 		modelShader->setMat4("projection", projectionModel);
 		modelShader->setMat4("view", viewModel);
 		glm::mat4 modelModel = glm::mat4(1.0f);
-		modelModel = glm::translate(modelModel, glm::vec3(0.0f, 0.0f, 0.0f)); // translate it down so it's at the center of the scene
-		modelModel = glm::rotate(modelModel, glm::radians(45.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-		modelModel = glm::rotate(modelModel, glm::radians(-45.0f), glm::vec3(1.0f, 0.0f, 0.0f));
-		modelModel = glm::scale(modelModel, glm::vec3(0.003f, 0.003f, 0.003f));	// it's wayy too big for our scene, so scale it down
+		modelModel = glm::translate(modelModel, glm::vec3(0.0f, 0.0f, -4.0f)); // translate it down so it's at the center of the scene
+		//modelModel = glm::rotate(modelModel, glm::radians(45.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+		//modelModel = glm::rotate(modelModel, glm::radians(-45.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+		modelModel = glm::scale(modelModel, glm::vec3(0.008f, 0.008f, 0.008f));	// it's wayy too big for our scene, so scale it down
 		modelShader->setMat4("model", modelModel);
 		containerModel.Draw(*modelShader);
 
@@ -236,6 +266,10 @@ void processInput(GLFWwindow* window)
 	else if (glfwGetKey(window, GLFW_KEY_F) == GLFW_PRESS)
 	{
 		currentShader = FLAT;
+	}
+	else if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
+	{
+		currentShader = SPOTLIGHT;
 	}
 }
 

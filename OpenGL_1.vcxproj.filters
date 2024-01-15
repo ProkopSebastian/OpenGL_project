@@ -59,5 +59,7 @@
     <None Include="shader_fog.fs" />
     <None Include="gouraud_shader.fs" />
     <None Include="gouraud_shader.vs" />
+    <None Include="5.3.light_casters.fs" />
+    <None Include="5.3.light_casters.vs" />
   </ItemGroup>
 </Project>

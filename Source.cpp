@@ -88,11 +88,14 @@ int main()
 	Model backpackModel("backpack/backpack.obj");
 	Model containerModel("Container/12281_Container_v2_L2.obj");
 
+	glm::vec3 fogColor = glm::vec3(0.8, 0.8, 0.8); // Kolor mg³y
+
 	while (!glfwWindowShouldClose(window))
 	{
 		// input
 		processInput(window);
-		glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
+		//glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
+		glClearColor(0.8f, 0.8f, 0.8f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // also clear the depth buffer now!
 
 		// initialize matrices
